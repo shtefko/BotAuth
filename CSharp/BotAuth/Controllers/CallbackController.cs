@@ -49,14 +49,15 @@ namespace BotAuth.Controllers
                 else
                     authProvider = (IAuthProvider)Activator.CreateInstance(type);
 
-                // Use the ResumptionCookie to get original conversation
-                var resumptionCookie = UrlToken.Decode<ResumptionCookie>(queryString["resumption"]);
-                var message = resumptionCookie.GetMessage();
+                // Get the conversation reference
+                var conversationRef = UrlToken.Decode<ConversationReference>(queryString["conversationRef"]);
+                
+                var message = conversationRef.GetPostToBotMessage();
                 using (var scope = DialogModule.BeginLifetimeScope(Conversation.Container, message))
                 {
                     // Get the UserData from the original conversation
                     IStateClient sc = scope.Resolve<IStateClient>();
-                    BotData userData = sc.BotState.GetUserData(message.ChannelId, message.From.Id);
+                    BotData userData = await sc.BotState.GetUserDataAsync(message.ChannelId, message.From.Id);
 
                     // Get Access Token using authorization code
                     var authOptions = userData.GetProperty<AuthenticationOptions>($"{authProvider.Name}{ContextConstants.AuthOptions}");
@@ -85,12 +86,12 @@ namespace BotAuth.Controllers
                     if (!writeSuccessful)
                     {
                         message.Text = String.Empty; // fail the login process if we can't write UserData
-                        await Conversation.ResumeAsync(resumptionCookie, message);
+                        await Conversation.ResumeAsync(conversationRef, message);
                         resp.Content = new StringContent("<html><body>Could not log you in at this time, please try again later</body></html>", System.Text.Encoding.UTF8, @"text/html");
                     }
                     else
                     {
-                        await Conversation.ResumeAsync(resumptionCookie, message);
+                        await Conversation.ResumeAsync(conversationRef, message);
                         resp.Content = new StringContent($"<html><body>Almost done! Please copy this number and paste it back to your chat so your authentication can complete:<br/> <h1>{magicNumber}</h1>.</body></html>", System.Text.Encoding.UTF8, @"text/html");
                     }
                     return resp;

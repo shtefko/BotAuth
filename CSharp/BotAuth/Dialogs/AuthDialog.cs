@@ -1,4 +1,5 @@
 ﻿using BotAuth.Models;
+using Microsoft.Bot.Builder.ConnectorEx;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Connector;
 using System;
@@ -58,8 +59,12 @@ namespace BotAuth.Dialogs
                         }
                         else
                         {
+                            // handle at mentions in Teams
+                            var text = msg.Text;
+                            if (text.Contains("</at>"))
+                                text = text.Substring(text.IndexOf("</at>") + 5).Trim();
 
-                            if (msg.Text.Length >= 6 && magicNumber.ToString() == msg.Text.Substring(0, 6))
+                            if (text.Length >= 6 && magicNumber.ToString() == text.Substring(0, 6))
                             {
                                 context.UserData.SetValue<string>($"{this.authProvider.Name}{ContextConstants.MagicNumberValidated}", "true");
                                 await context.PostAsync($"Thanks {authResult.UserName}. You are now logged in. ");
@@ -103,9 +108,9 @@ namespace BotAuth.Dialogs
                         // Save authenticationOptions in UserData
                         context.UserData.SetValue<AuthenticationOptions>($"{this.authProvider.Name}{ContextConstants.AuthOptions}", this.authOptions);
 
-                        // Get ResumptionCookie and combine with AuthProvider type for the callback
-                        var resumptionCookie = new ResumptionCookie(msg);
-                        var state = getStateParam(resumptionCookie);
+                        // Get ConversationReference and combine with AuthProvider type for the callback
+                        var conversationRef = context.Activity.ToConversationReference();
+                        var state = getStateParam(conversationRef);
                         string authenticationUrl = await this.authProvider.GetAuthUrlAsync(this.authOptions, state);
                         await PromptToLogin(context, msg, authenticationUrl);
                         context.Wait(this.MessageReceivedAsync);
@@ -114,10 +119,10 @@ namespace BotAuth.Dialogs
             }
         }
 
-        private string getStateParam(ResumptionCookie resumptionCookie)
+        private string getStateParam(ConversationReference conversationRef)
         {
             var queryString = HttpUtility.ParseQueryString(string.Empty);
-            queryString["resumption"] = UrlToken.Encode(resumptionCookie);
+            queryString["conversationRef"] = UrlToken.Encode(conversationRef);
             queryString["providerassembly"] = this.authProvider.GetType().Assembly.FullName;
             queryString["providertype"] = this.authProvider.GetType().FullName;
             queryString["providername"] = this.authProvider.Name;
@@ -134,28 +139,8 @@ namespace BotAuth.Dialogs
         protected virtual Task PromptToLogin(IDialogContext context, IMessageActivity msg, string authenticationUrl)
         {
             Attachment plAttachment = null;
-            switch (msg.ChannelId)
-            {
-                // Teams does not yet support signin cards
-                case "msteams":
-                    {
-                        ThumbnailCard plCard = new ThumbnailCard()
-                        {
-                            Title = this.prompt,
-                            Subtitle = "",
-                            Images = new List<CardImage>(),
-                            Buttons = GetCardActions(authenticationUrl, "openUrl")
-                        };
-                        plAttachment = plCard.ToAttachment();
-                        break;
-                    }
-                default:
-                    {
-                        SigninCard plCard = new SigninCard(this.prompt, GetCardActions(authenticationUrl, "signin"));
-                        plAttachment = plCard.ToAttachment();
-                        break;
-                    }
-            }
+            SigninCard plCard = new SigninCard(this.prompt, GetCardActions(authenticationUrl, "signin"));
+            plAttachment = plCard.ToAttachment();
 
             IMessageActivity response = context.MakeMessage();
             response.Recipient = msg.From;
