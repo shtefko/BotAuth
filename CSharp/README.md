@@ -3,11 +3,11 @@ BotAuth for C# is a package for handling authentication in a bot built using the
 
 ## [BotAuth](/BotAuth)
 BotAuth is the core library that contains the following important files:
-- [**Dialogs/AuthDialog.cs**](/BotAuth/Dialogs/AuthDialog.cs): the dialog class for initiating the OAuth flow
-- [**Controllers/CallbackController.cs**](/BotAuth/Controllers/CallbackController.cs): the callback controller for getting access tokens from an authorization code
-- [**IAuthProvider.cs**](/BotAuth/IAuthProvider.cs): the interface that all providers need to implement
-- [**Models/AuthenticationOptions.cs**](/BotAuth/Models/AuthenticationOptions.cs): class used to initialize app details (ex: app id, app secret, scopes, redirect, etc) and passed into the AuthDialog
-- [**Models/AuthResult.cs**](/BotAuth/Models/AuthResult.cs): the result passed back from the AuthDialog
+- [**Dialogs/AuthDialog.cs**](/CSharp/BotAuth/Dialogs/AuthDialog.cs): the dialog class for initiating the OAuth flow
+- [**Controllers/CallbackController.cs**](/CSharp/BotAuth/Controllers/CallbackController.cs): the callback controller for getting access tokens from an authorization code
+- [**IAuthProvider.cs**](/CSharp/BotAuth/IAuthProvider.cs): the interface that all providers need to implement
+- [**Models/AuthenticationOptions.cs**](/CSharp/BotAuth/Models/AuthenticationOptions.cs): class used to initialize app details (ex: app id, app secret, scopes, redirect, etc) and passed into the AuthDialog
+- [**Models/AuthResult.cs**](/CSharp/BotAuth/Models/AuthResult.cs): the result passed back from the AuthDialog
 
 ## Using BotAuth
 To use BotAuth, you should install the NuGet package of the provider(s) you want to use (see NuGet section for more information on packages). Currently, BotAuth has providers for Azure AD v1, v2, and B2C applications as well as a generic [OAuth2](https://github.com/titarenko/OAuth2) provider that supports a number of other identities (Facebook, Google, LinkedIn, etc).
