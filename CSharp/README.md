@@ -1,7 +1,7 @@
 # BotAuth for C#
 BotAuth for C# is a package for handling authentication in a bot built using the Bot Framework and BotBuilder libraries. It contains a core library that handles authentication, a set of providers that are dependency injected into the core library, and samples that leverage the providers. More specific details are listed below:
 
-## [BotAuth](/BotAuth)
+## [BotAuth](/CSharp/BotAuth)
 BotAuth is the core library that contains the following important files:
 - [**Dialogs/AuthDialog.cs**](/CSharp/BotAuth/Dialogs/AuthDialog.cs): the dialog class for initiating the OAuth flow
 - [**Controllers/CallbackController.cs**](/CSharp/BotAuth/Controllers/CallbackController.cs): the callback controller for getting access tokens from an authorization code
