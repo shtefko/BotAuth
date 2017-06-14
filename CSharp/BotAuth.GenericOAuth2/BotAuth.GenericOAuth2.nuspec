@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>BotAuth.GenericOAuth2</id>
-    <version>0.1.2-alpha</version>
+    <version>3.8.1-alpha</version>
     <title>BotAuth.GenericOAuth2</title>
     <authors>Richard diZerega</authors>
     <owners>Richard diZerega</owners>

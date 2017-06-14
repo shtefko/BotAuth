@@ -139,7 +139,11 @@ namespace BotAuth.Dialogs
         protected virtual Task PromptToLogin(IDialogContext context, IMessageActivity msg, string authenticationUrl)
         {
             Attachment plAttachment = null;
-            SigninCard plCard = new SigninCard(this.prompt, GetCardActions(authenticationUrl, "signin"));
+            SigninCard plCard;
+            if (msg.ChannelId == "msteams")
+                plCard = new SigninCard(this.prompt, GetCardActions(authenticationUrl, "openUrl"));
+            else
+                plCard = new SigninCard(this.prompt, GetCardActions(authenticationUrl, "signin"));
             plAttachment = plCard.ToAttachment();
 
             IMessageActivity response = context.MakeMessage();
