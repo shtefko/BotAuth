@@ -21,8 +21,12 @@ namespace BotAuth.AADv1
         public async Task<AuthResult> GetAccessToken(AuthenticationOptions authOptions, IDialogContext context)
         {
             AuthResult authResult;
-            if (context.UserData.TryGetValue($"{this.Name}{ContextConstants.AuthResultKey}", out authResult))
-            {
+            string validated = null;
+            if (context.UserData.TryGetValue($"{this.Name}{ContextConstants.AuthResultKey}", out authResult) &&
+                (!authOptions.UseMagicNumber ||
+                (context.UserData.TryGetValue($"{this.Name}{ContextConstants.MagicNumberValidated}", out validated) &&
+                validated == "true")))
+            { 
                 try
                 {
                     InMemoryTokenCacheADAL tokenCache = new InMemoryTokenCacheADAL(authResult.TokenCache);
@@ -42,7 +46,8 @@ namespace BotAuth.AADv1
                 }
                 return authResult;
             }
-            return null;
+            else
+                return null;
         }
 
         public async Task<string> GetAuthUrlAsync(AuthenticationOptions authOptions, string state)
@@ -75,6 +80,31 @@ namespace BotAuth.AADv1
             context.UserData.RemoveValue($"{this.Name}{ContextConstants.MagicNumberValidated}");
             string signoutURl = "https://login.microsoftonline.com/common/oauth2/logout?post_logout_redirect_uri=" + System.Net.WebUtility.UrlEncode(authOptions.RedirectUrl);
             await context.PostAsync($"In order to finish the sign out, please click at this [link]({signoutURl}).");
+        }
+
+        public async Task<AuthResult> GetAccessTokenSilent(AuthenticationOptions options, IDialogContext context)
+        {
+            AuthResult result;
+            if (context.UserData.TryGetValue($"{this.Name}{ContextConstants.AuthResultKey}", out result))
+            {
+                try
+                {
+                    InMemoryTokenCacheADAL tokenCache = new InMemoryTokenCacheADAL(result.TokenCache);
+                    AuthenticationContext authContext = new AuthenticationContext(options.Authority, tokenCache);
+                    var r = await authContext.AcquireTokenSilentAsync(options.ResourceId,
+                        new ClientCredential(options.ClientId, options.ClientSecret),
+                        new UserIdentifier(result.UserUniqueId, UserIdentifierType.UniqueId));
+                    result = r.FromADALAuthenticationResult(tokenCache);
+                    context.StoreAuthResult(result, this);
+                    return result;
+                }
+                catch (Exception)
+                {
+                    return null;
+                }
+            }
+            else
+                return null;
         }
     }
 }

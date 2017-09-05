@@ -1,6 +1,8 @@
-﻿using BotAuth.Models;
+﻿using Autofac;
+using BotAuth.Models;
 using Microsoft.Bot.Builder.ConnectorEx;
 using Microsoft.Bot.Builder.Dialogs;
+using Microsoft.Bot.Builder.Dialogs.Internals;
 using Microsoft.Bot.Connector;
 using System;
 using System.Collections.Generic;
@@ -45,9 +47,24 @@ namespace BotAuth.Dialogs
                     //REMOVING THIS WILL REMOVE YOUR BOT AND YOUR USERS TO SECURITY VULNERABILITIES. 
                     //MAKE SURE YOU UNDERSTAND THE ATTACK VECTORS AND WHY THIS IS IN PLACE.
                     context.UserData.TryGetValue<string>($"{this.authProvider.Name}{ContextConstants.MagicNumberValidated}", out validated);
-                    if (validated == "true")
+                    if (validated == "true" || !this.authOptions.UseMagicNumber)
                     {
-                        context.Done(authResult);
+                        // Try to get token to ensure it is still good
+                        var token = await this.authProvider.GetAccessToken(this.authOptions, context);
+                        if (token != null)
+                            context.Done(token);
+                        else
+                        {
+                            // Save authenticationOptions in UserData
+                            context.UserData.SetValue<AuthenticationOptions>($"{this.authProvider.Name}{ContextConstants.AuthOptions}", this.authOptions);
+
+                            // Get ConversationReference and combine with AuthProvider type for the callback
+                            var conversationRef = context.Activity.ToConversationReference();
+                            var state = getStateParam(conversationRef);
+                            string authenticationUrl = await this.authProvider.GetAuthUrlAsync(this.authOptions, state);
+                            await PromptToLogin(context, msg, authenticationUrl);
+                            context.Wait(this.MessageReceivedAsync);
+                        }
                     }
                     else if (context.UserData.TryGetValue<int>($"{this.authProvider.Name}{ContextConstants.MagicNumberKey}", out magicNumber))
                     {

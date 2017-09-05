@@ -14,9 +14,9 @@ namespace BotAuth.AADv2
         {
             var result = new AuthResult
             {
-                AccessToken = authResult.Token,
+                AccessToken = authResult.AccessToken,
                 UserName = $"{authResult.User.Name}",
-                UserUniqueId = authResult.User.UniqueId,
+                UserUniqueId = authResult.User.Identifier,
                 ExpiresOnUtcTicks = authResult.ExpiresOn.UtcTicks,
                 TokenCache = tokenCache.Serialize()
             };

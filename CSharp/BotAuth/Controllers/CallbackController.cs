@@ -52,7 +52,7 @@ namespace BotAuth.Controllers
                 // Get the conversation reference
                 var conversationRef = UrlToken.Decode<ConversationReference>(queryString["conversationRef"]);
                 
-                var message = conversationRef.GetPostToBotMessage();
+                Activity message = conversationRef.GetPostToBotMessage();
                 using (var scope = DialogModule.BeginLifetimeScope(Conversation.Container, message))
                 {
                     // Get the UserData from the original conversation
@@ -72,8 +72,11 @@ namespace BotAuth.Controllers
                         try
                         {
                             userData.SetProperty($"{authProvider.Name}{ContextConstants.AuthResultKey}", token);
-                            userData.SetProperty($"{authProvider.Name}{ContextConstants.MagicNumberKey}", magicNumber);
-                            userData.SetProperty($"{authProvider.Name}{ContextConstants.MagicNumberValidated}", "false");
+                            if (authOptions.UseMagicNumber)
+                            {
+                                userData.SetProperty($"{authProvider.Name}{ContextConstants.MagicNumberKey}", magicNumber);
+                                userData.SetProperty($"{authProvider.Name}{ContextConstants.MagicNumberValidated}", "false");
+                            }
                             sc.BotState.SetUserData(message.ChannelId, message.From.Id, userData);
                             writeSuccessful = true;
                         }

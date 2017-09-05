@@ -25,8 +25,9 @@ namespace BotAuth.AADb2c
             AuthResult authResult;
             string validated = null;
             if (context.UserData.TryGetValue($"{this.Name}{ContextConstants.AuthResultKey}", out authResult) &&
-                context.UserData.TryGetValue($"{this.Name}{ContextConstants.MagicNumberValidated}", out validated) &&
-                validated == "true")
+                (!authOptions.UseMagicNumber ||
+                (context.UserData.TryGetValue($"{this.Name}{ContextConstants.MagicNumberValidated}", out validated) &&
+                validated == "true")))
             {
                 try
                 {
@@ -65,10 +66,9 @@ namespace BotAuth.AADb2c
                     await Logout(authOptions, context);
                     return null;
                 }
-                return authResult;
             }
-
-            return null;
+            else
+                return null;
         }
 
         public async Task<string> GetAuthUrlAsync(AuthenticationOptions authOptions, string state)
@@ -117,6 +117,46 @@ namespace BotAuth.AADb2c
             context.UserData.RemoveValue($"{this.Name}{ContextConstants.MagicNumberValidated}");
             string signoutURl = $"{authOptions.Authority}/oauth2/logout?post_logout_redirect_uri={System.Net.WebUtility.UrlEncode(authOptions.RedirectUrl)}";
             await context.PostAsync($"In order to finish the sign out, please click at this [link]({signoutURl}).");
+        }
+
+        public async Task<AuthResult> GetAccessTokenSilent(AuthenticationOptions options, IDialogContext context)
+        {
+            string validated = null;
+            AuthResult result;
+            if (context.UserData.TryGetValue($"{this.Name}{ContextConstants.AuthResultKey}", out result) &&
+                context.UserData.TryGetValue($"{this.Name}{ContextConstants.MagicNumberValidated}", out validated) &&
+                validated == "true")
+            {
+                try
+                {
+                    // Use refresh token to get new token
+                    HttpClient client = new HttpClient();
+                    HttpContent content = new StringContent($"grant_type=refresh_token" +
+                        $"&client_id={options.ClientId}" +
+                        $"&client_secret={HttpUtility.UrlEncode(options.ClientSecret)}" +
+                        $"&scope={String.Join("%20", options.Scopes)}" +
+                        $"&refresh_token={result.RefreshToken}" +
+                        $"&redirect_uri={options.RedirectUrl}");
+                    content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/x-www-form-urlencoded");
+                    using (var response = await client.PostAsync($"{options.Authority}/oauth2/v2.0/token?p={options.Policy}", content))
+                    {
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var json = JObject.Parse(await response.Content.ReadAsStringAsync());
+                            result = json.ToAuthResult();
+                            return result;
+                        }
+                        else
+                            return null;
+                    }
+                }
+                catch (Exception)
+                {
+                    return null;
+                }
+            }
+            else
+                return null;
         }
     }
 }

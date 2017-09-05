@@ -30,6 +30,7 @@ namespace SampleAADv2Bot.Dialogs
             // Initialize AuthenticationOptions and forward to AuthDialog for token
             AuthenticationOptions options = new AuthenticationOptions()
             {
+                UseMagicNumber = false,
                 Authority = ConfigurationManager.AppSettings["aad:Authority"],
                 ClientId = ConfigurationManager.AppSettings["aad:ClientId"],
                 ClientSecret = ConfigurationManager.AppSettings["aad:ClientSecret"],

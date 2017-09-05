@@ -28,22 +28,31 @@ namespace BotAuth.GenericOAuth2
 
         public async Task<AuthResult> GetAccessToken(AuthenticationOptions authOptions, IDialogContext context)
         {
-            AuthorizationRoot authRoot = new AuthorizationRoot();
-            var client = authRoot.Clients.FirstOrDefault(i => i.Name == authOptions.ClientType);
-            if (client != null)
+            AuthResult authResult;
+            string validated = null;
+            if (context.UserData.TryGetValue($"{this.Name}{ContextConstants.AuthResultKey}", out authResult) &&
+                (!authOptions.UseMagicNumber ||
+                (context.UserData.TryGetValue($"{this.Name}{ContextConstants.MagicNumberValidated}", out validated) &&
+                validated == "true")))
             {
-                // Prepare the response
-                AuthResult authResult = null;
-                if (client is OAuth2.Client.OAuth2Client && !String.IsNullOrEmpty(((OAuth2.Client.OAuth2Client)client).AccessToken))
+                AuthorizationRoot authRoot = new AuthorizationRoot();
+                var client = authRoot.Clients.FirstOrDefault(i => i.Name == authOptions.ClientType);
+                if (client != null)
                 {
-                    authResult.ExpiresOnUtcTicks = ((OAuth2.Client.OAuth2Client)client).ExpiresAt.ToUniversalTime().Ticks;
-                    authResult.AccessToken = ((OAuth2.Client.OAuth2Client)client).AccessToken;
+                    // Prepare the response
+                    if (client is OAuth2.Client.OAuth2Client && !String.IsNullOrEmpty(((OAuth2.Client.OAuth2Client)client).AccessToken))
+                    {
+                        authResult.ExpiresOnUtcTicks = ((OAuth2.Client.OAuth2Client)client).ExpiresAt.ToUniversalTime().Ticks;
+                        authResult.AccessToken = ((OAuth2.Client.OAuth2Client)client).AccessToken;
+                    }
+                    else if (client is OAuth2.Client.OAuthClient && !String.IsNullOrEmpty(((OAuth2.Client.OAuthClient)client).AccessToken))
+                    {
+                        authResult.AccessToken = ((OAuth2.Client.OAuthClient)client).AccessToken;
+                    }
+                    return authResult;
                 }
-                else if (client is OAuth2.Client.OAuthClient && !String.IsNullOrEmpty(((OAuth2.Client.OAuthClient)client).AccessToken))
-                {
-                    authResult.AccessToken = ((OAuth2.Client.OAuthClient)client).AccessToken;
-                }
-                return authResult;
+                else
+                    return null;
             }
             else
                 return null;
@@ -86,6 +95,11 @@ namespace BotAuth.GenericOAuth2
             context.UserData.RemoveValue($"{this.Name}{ContextConstants.MagicNumberKey}");
             context.UserData.RemoveValue($"{this.Name}{ContextConstants.MagicNumberValidated}");
             await context.PostAsync($"Your sign in to {authOptions.ClientType} has been cleared.");
+        }
+
+        public async Task<AuthResult> GetAccessTokenSilent(AuthenticationOptions options, IDialogContext context)
+        {
+            return await GetAccessToken(options, context);
         }
     }
 }
