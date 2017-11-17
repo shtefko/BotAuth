@@ -13,6 +13,7 @@ namespace BotAuth.Models
         public string RefreshToken { get; set; }
         public string UserName { get; set; }
         public string UserUniqueId { get; set; }
+        public string DisplayableId { get; set; }
         public long ExpiresOnUtcTicks { get; set; }
         public byte[] TokenCache { get; set; }
         public string IdentityProvider { get; set; }

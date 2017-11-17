@@ -21,6 +21,7 @@ namespace BotAuth.AADb2c
                 AccessToken = json.Value<string>("access_token"),
                 UserName = idTokenJson.Value<string>("name"),
                 UserUniqueId = idTokenJson.Value<string>("oid"),
+                DisplayableId = idTokenJson.Value<string>("unique_name"),
                 ExpiresOnUtcTicks = DateTime.UtcNow.AddSeconds(3600).Ticks, //HACK???
                 RefreshToken = json.Value<string>("refresh_token"),
                 IdentityProvider = idTokenJson.Value<string>("idp")

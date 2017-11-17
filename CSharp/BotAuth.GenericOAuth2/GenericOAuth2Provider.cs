@@ -77,6 +77,7 @@ namespace BotAuth.GenericOAuth2
             var authResult = new AuthResult();
             authResult.UserName = $"{userInfo.FirstName} {userInfo.LastName}";
             authResult.UserUniqueId = userInfo.Id;
+            authResult.DisplayableId = userInfo.Email;
             if (client is OAuth2.Client.OAuth2Client)
             {
                 authResult.ExpiresOnUtcTicks = ((OAuth2.Client.OAuth2Client)client).ExpiresAt.ToUniversalTime().Ticks;

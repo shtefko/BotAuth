@@ -17,6 +17,7 @@ namespace BotAuth.AADv1
                 AccessToken = authResult.AccessToken,
                 UserName = $"{authResult.UserInfo.GivenName} {authResult.UserInfo.FamilyName}",
                 UserUniqueId = authResult.UserInfo.UniqueId,
+                DisplayableId = authResult.UserInfo.DisplayableId,
                 ExpiresOnUtcTicks = authResult.ExpiresOn.UtcTicks,
                 TokenCache = tokenCache.Serialize()
             };
